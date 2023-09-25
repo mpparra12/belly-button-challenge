@@ -1,15 +1,22 @@
 const DATA_URL = "https://2u-data-curriculum-team.s3.amazonaws.com/dataviz-classroom/v1.1/14-Interactive-Web-Visualizations/02-Homework/samples.json";
+let allData;
 
 function fetchData(endpoint) {
     return d3.json(DATA_URL);
 }
 
 function init() {
-    let dropdownMenu = d3.select("#selDataset");
-
     fetchData().then(data => {
-        populateDropdown(data.names, dropdownMenu);
+        console.log("Fetched data:", data);
+
+        allData = data; 
+        populateDropdown(data.names, d3.select("#selDataset"));
         renderDashboard(data.names[0]);
+
+        d3.select("#selDataset").on("change", function() {
+            let newSample = d3.select(this).property("value");
+            renderDashboard(newSample);
+        });
     });
 }
 
@@ -22,18 +29,17 @@ function populateDropdown(names, menu) {
 }
 
 function renderDashboard(sample) {
+    console.log("Rendering dashboard for sample:", sample);
     buildMetadata(sample);
     buildBarChart(sample);
     buildBubbleChart(sample);
-    buildGaugeChart(sample);
 }
 
 function buildMetadata(sample) {
-    fetchData().then(data => {
+    let data = allData;
         let metadata = data.metadata;
-        let filteredData = metadata.find(result => result.id == sample);
+        let filteredData = metadata.find(result => String(result.id) === String(sample));
         displayMetadata(filteredData);
-    });
 }
 
 function displayMetadata(data) {
@@ -46,9 +52,9 @@ function displayMetadata(data) {
 }
 
 function buildBarChart(sample) {
-    fetchData().then(data => {
+    let data = allData;
         let samples = data.samples;
-        let sampleData = samples.find(s => s.id == sample);
+        let sampleData = samples.find(s => String(s.id) === String(sample));
 
         let yticks = sampleData.otu_ids.slice(0, 10).map(id => `OTU ${id}`).reverse();
         let xticks = sampleData.sample_values.slice(0, 10).reverse();
@@ -63,11 +69,10 @@ function buildBarChart(sample) {
         };
 
         Plotly.newPlot("bar", [trace], { title: "Top 10 OTUs Present" });
-    });
 }
 
 function buildBubbleChart(sample) {
-    fetchData().then(data => {
+    let data = allData;
         let samples = data.samples;
         let sampleData = samples.find(s => s.id == sample);
 
@@ -88,7 +93,6 @@ function buildBubbleChart(sample) {
             hovermode: "closest",
             xaxis: { title: "OTU ID" }
         });
-    });
 }
 
 init();
